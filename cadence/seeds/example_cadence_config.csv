@@ -1,0 +1,4 @@
+model_name,frequency,start_date,enabled
+orders,hourly,2025-02-01,true
+subscriptions,daily,2025-01-01,true
+page_views,hourly,2025-02-08,false

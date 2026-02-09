@@ -35,20 +35,3 @@ macros:
       description: |
         A table with one column: expected_batch_time (timestamp)
         containing all expected batch timestamps in the range.
-        
-    examples:
-      - name: Generate hourly batches for one day
-        code: |
-          {{ generate_expected_batches(
-              start_date="'2025-02-08'",
-              end_date="'2025-02-09'",
-              frequency="'hourly'"
-          ) }}
-          
-      - name: Generate daily batches for one month
-        code: |
-          {{ generate_expected_batches(
-              start_date="'2025-02-01'",
-              end_date="'2025-02-28'",
-              frequency="'daily'"
-          ) }}

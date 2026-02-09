@@ -1,0 +1,54 @@
+version: 2
+
+macros:
+  - name: generate_expected_batches
+    description: |
+      Generates a time series of expected batch timestamps.
+      
+      This is the core function of dbt-cadence. It creates a "date spine" 
+      representing when batches SHOULD arrive, which can then be compared 
+      against actual data to detect gaps.
+      
+    arguments:
+      - name: start_date
+        type: string (date/timestamp)
+        description: |
+          The beginning of the time range. 
+          Format: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'
+          Example: '2025-02-08' or '2025-02-08 00:00:00'
+          
+      - name: end_date
+        type: string (date/timestamp)
+        description: |
+          The end of the time range.
+          Format: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS'
+          Example: '2025-02-09' or '2025-02-09 23:59:59'
+          
+      - name: frequency
+        type: string
+        description: |
+          The expected batch frequency.
+          Options: 'hourly', 'daily'
+          Default: 'hourly'
+          
+    returns:
+      description: |
+        A table with one column: expected_batch_time (timestamp)
+        containing all expected batch timestamps in the range.
+        
+    examples:
+      - name: Generate hourly batches for one day
+        code: |
+          {{ generate_expected_batches(
+              start_date="'2025-02-08'",
+              end_date="'2025-02-09'",
+              frequency="'hourly'"
+          ) }}
+          
+      - name: Generate daily batches for one month
+        code: |
+          {{ generate_expected_batches(
+              start_date="'2025-02-01'",
+              end_date="'2025-02-28'",
+              frequency="'daily'"
+          ) }}

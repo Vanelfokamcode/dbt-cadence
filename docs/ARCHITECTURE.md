@@ -101,5 +101,36 @@ This keeps our internal logic separate from user-facing examples.
 - Views for lightweight examples
 
 ---
+## Dynamic Configuration
+
+dbt-cadence uses a config-driven approach to monitor multiple models:
+
+1. **Add to config seed:**
+```csv
+   model_name,frequency,start_date,enabled,table_ref,timestamp_column
+   my_model,hourly,2025-01-01,true,stg_my_model,created_at
+```
+
+2. **Run dbt:**
+```bash
+   dbt seed --full-refresh
+   dbt run
+```
+
+3. **Check for gaps:**
+```sql
+   SELECT * FROM cadence_metadata.missing_batches
+   WHERE model_name = 'my_model'
+```
+
+The system automatically:
+- Generates expected batches based on frequency
+- Extracts actual batches from the table
+- Compares and identifies gaps
+- Calculates severity based on gap age
+
+
 
 **Next:** See [DEVELOPMENT.md](DEVELOPMENT.md) for setup instructions.
+
+

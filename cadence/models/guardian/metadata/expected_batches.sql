@@ -5,35 +5,44 @@
     )
 }}
 
-/*
-    Expected Batches
-    
-    Generates expected batch timestamps for configured models.
-    
-    For now: hardcoded for 'orders' model as a demo.
-    Chapter 11: we'll make this dynamic based on cadence_config.
-*/
-
-with config as (
-    select 
-        model_name,
-        frequency,
-        start_date
+{# Get configs #}
+{% set config_query %}
+    select model_name, frequency, start_date
     from {{ ref('cadence_config') }}
-    where model_name = 'orders'  -- Demo: just orders for now
-),
+{% endset %}
 
-expected as (
+{% set configs = run_query(config_query) %}
+
+{% if execute %}
+
+with
+{# Generate CTEs for each config #}
+{% for config in configs %}
+{{ config.model_name }}_batches as (
     select
-        'orders' as model_name,
+        '{{ config.model_name }}' as model_name,
         expected_batch_time
     from (
         {{ generate_expected_batches(
-            start_date="'2025-02-01 00:00:00'",
-            end_date="'2025-02-08 23:00:00'",
-            frequency="hourly"
+            start_date="'" ~ config.start_date ~ "'",
+            end_date="current_date",
+            frequency=config.frequency
         ) }}
     )
-)
+){% if not loop.last %},{% endif %}
+{% endfor %}
 
-select * from expected
+{# Union all batches #}
+{% for config in configs %}
+select * from {{ config.model_name }}_batches
+{% if not loop.last %}
+union all
+{% endif %}
+{% endfor %}
+
+{% else %}
+select 
+    cast(null as varchar) as model_name,
+    cast(null as timestamp) as expected_batch_time
+where false
+{% endif %}

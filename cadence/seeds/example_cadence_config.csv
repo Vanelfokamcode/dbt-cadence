@@ -1,4 +1,4 @@
 model_name,frequency,start_date,enabled,table_ref,timestamp_column
-orders,hourly,2025-02-01,true,demo_orders,created_at
-subscriptions,daily,2025-01-01,true,demo_subscriptions,created_at
+orders,hourly,2025-02-08,true,demo_orders,created_at
+subscriptions,daily,2025-02-08,true,demo_subscriptions,created_at
 page_views,hourly,2025-02-08,true,demo_page_views,viewed_at

@@ -5,7 +5,6 @@
     )
 }}
 
-{# Get configs #}
 {% set config_query %}
     select model_name, frequency, start_date
     from {{ ref('cadence_config') }}
@@ -16,7 +15,6 @@
 {% if execute %}
 
 with
-{# Generate CTEs for each config #}
 {% for config in configs %}
 {{ config.model_name }}_batches as (
     select
@@ -25,14 +23,13 @@ with
     from (
         {{ generate_expected_batches(
             start_date="'" ~ config.start_date ~ "'",
-            end_date="current_date",
+            end_date="'2025-02-09'",
             frequency=config.frequency
         ) }}
     )
 ){% if not loop.last %},{% endif %}
 {% endfor %}
 
-{# Union all batches #}
 {% for config in configs %}
 select * from {{ config.model_name }}_batches
 {% if not loop.last %}

@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: actual_batches
+    description: |
+      Actual batch timestamps extracted from monitored tables.
+      Ephemeral model used for comparison with expected batches.
+    columns:
+      - name: model_name
+        description: Name of the monitored model
+      - name: actual_batch_time
+        description: Timestamp of actual batch found in data
+
+  - name: batch_gaps
+    description: |
+      Comparison of expected vs actual batches.
+      Shows which batches are OK and which are MISSING.
+    columns:
+      - name: model_name
+        description: Name of the monitored model
+        tests:
+          - not_null
+      - name: expected_batch_time
+        description: Timestamp when batch was expected
+        tests:
+          - not_null
+      - name: actual_batch_time
+        description: Timestamp of actual batch (null if missing)
+      - name: status
+        description: OK or MISSING
+        tests:
+          - accepted_values:
+              values: ['OK', 'MISSING']
+      - name: gap_age_hours
+        description: How many hours the batch has been missing

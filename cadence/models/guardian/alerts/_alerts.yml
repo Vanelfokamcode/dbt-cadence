@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: missing_batches
+    description: |
+      Final alert table showing only missing batches with severity.
+      
+      This is the table to query for monitoring dashboards or
+      to send alerts to Slack/email.
+    columns:
+      - name: model_name
+        description: Name of the monitored model
+        tests:
+          - not_null
+      - name: expected_batch_time
+        description: When the batch was expected
+        tests:
+          - not_null
+      - name: gap_age_hours
+        description: How long the batch has been missing
+      - name: frequency
+        description: Expected batch frequency (hourly, daily)
+      - name: severity
+        description: Alert severity based on gap age
+        tests:
+          - accepted_values:
+              values: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+      - name: message
+        description: Human-readable alert message
+      - name: detected_at
+        description: When the gap was detected

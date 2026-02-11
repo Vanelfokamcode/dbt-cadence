@@ -2,7 +2,9 @@ name: 'cadence'
 version: '0.1.0'
 config-version: 2
 
-# Project profile (points to profiles.yml)
+# Require dbt 1.8.0 or higher
+require-dbt-version: [">=1.8.0"]
+
 profile: 'cadence'
 
 # Directories
@@ -13,7 +15,7 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-# Build directory
+# Build
 target-path: "target"
 clean-targets:
   - "target"
@@ -22,22 +24,40 @@ clean-targets:
 # Model configurations
 models:
   cadence:
-    # Core cadence models
     +materialized: table
     
-    # Guardian metadata tracking
+    # Guardian (core monitoring logic)
     guardian:
       +schema: cadence_metadata
-      +materialized: incremental
-      +on_schema_change: "append_new_columns"
+      
+      metadata:
+        +materialized: table
+        +on_schema_change: "append_new_columns"
+        
+      detection:
+        actual_batches:
+          +materialized: ephemeral
+        batch_gaps:
+          +materialized: table
+          
+      alerts:
+        +materialized: table
     
-    # Example/demo models
+    # Examples (demo data)
     examples:
       +schema: cadence_examples
-      +materialized: view
+      +materialized: table
 
-# Vars (configuration globale)
+# Global variables
 vars:
   cadence:
-    # Default cadence frequency
     default_frequency: 'hourly'
+
+# Seeds configuration
+seeds:
+  cadence:
+    +schema: cadence_metadata
+    example_cadence_config:
+      +column_types:
+        start_date: date
+        enabled: boolean

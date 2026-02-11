@@ -3,29 +3,63 @@ version: 2
 models:
   - name: missing_batches
     description: |
-      Final alert table showing only missing batches with severity.
+      Missing Batches Alert Table
       
-      This is the table to query for monitoring dashboards or
-      to send alerts to Slack/email.
+      This is your monitoring dashboard. Every row is a missing batch that needs attention.
+      
+      Use this table to:
+      - Build monitoring dashboards
+      - Send Slack alerts
+      - Trigger PagerDuty incidents
+      - Generate daily reports
+      
+      Severity Levels:
+      - LOW: less than 2 hours - Monitor
+      - MEDIUM: 2-12 hours - Investigate
+      - HIGH: 12-24 hours - Urgent
+      - CRITICAL: more than 24 hours - Immediate action
+      
+      Example: Query high priority gaps
+      SELECT * FROM cadence_metadata.missing_batches
+      WHERE severity IN ('HIGH', 'CRITICAL')
+      ORDER BY gap_age_hours DESC
+      
     columns:
       - name: model_name
-        description: Name of the monitored model
+        description: Model with missing batch
         tests:
           - not_null
+          
       - name: expected_batch_time
         description: When the batch was expected
         tests:
           - not_null
+          
       - name: gap_age_hours
-        description: How long the batch has been missing
-      - name: frequency
-        description: Expected batch frequency (hourly, daily)
-      - name: severity
-        description: Alert severity based on gap age
+        description: |
+          Hours since batch was expected.
+          Calculated as current_timestamp minus expected_batch_time.
         tests:
+          - not_null
+          
+      - name: frequency
+        description: Expected batch frequency from config
+          
+      - name: severity
+        description: |
+          Alert severity level based on gap age.
+          LOW (under 2h), MEDIUM (2-12h), HIGH (12-24h), CRITICAL (over 24h)
+        tests:
+          - not_null
           - accepted_values:
               values: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+              
       - name: message
-        description: Human-readable alert message
+        description: |
+          Human-readable alert message.
+          Example: Batch missing for 18 hours
+        tests:
+          - not_null
+          
       - name: detected_at
-        description: When the gap was detected
+        description: When this gap was detected (current timestamp)

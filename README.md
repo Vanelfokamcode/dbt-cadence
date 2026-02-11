@@ -1,31 +1,24 @@
 # 🎵 dbt-cadence
 
-> *Keep your data pipelines in rhythm - detect missing batches before they become problems*
+> **Keep your data pipelines in rhythm** - Detect missing batches before they become problems
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-in%20development-yellow)](https://github.com/TON_USERNAME/dbt-cadence)
+[![dbt](https://img.shields.io/badge/dbt-1.8+-orange.svg)](https://www.getdbt.com/)
 
 ---
 
 ## 🎯 The Problem
 
-Data pipelines are supposed to run like clockwork - hourly, daily, every 15 minutes. But when they break, the silence is deafening.
+**Data pipelines are supposed to run like clockwork.** But when they break, the silence is deafening.
 
-**Real scenarios:**
-- Your API was down for 2 hours → your hourly pipeline never noticed
-- A batch arrived 3 days late → your analysis was wrong for 72 hours
-- Sunday had zero orders (totally normal) → but you thought it was a bug
+Your API was down for 2 hours → your hourly pipeline never noticed  
+A batch arrived 3 days late → your analysis was wrong for 72 hours  
+Sunday had zero orders (totally normal) → but you thought it was a bug  
 
 **The cost:**
-- Knight Capital: $440M lost in 45 minutes because one server was missing from deployment
-- British Airways: €100M+ when backup gaps went undetected
-- Your company: ??? (you probably don't even know yet)
-
-**Why existing tools don't solve this:**
-- ✅ **dbt** transforms data brilliantly, but doesn't track what *should* exist
-- ✅ **Airflow/Dagster** track tasks, not data completeness
-- ✅ **Monte Carlo/Metaplane** cost $50K-200K/year and are reactive, not preventive
-- ✅ **Custom scripts** mean every company reinvents the wheel
+- 💰 Knight Capital: $440M lost in 45 minutes
+- ✈️ British Airways: €100M+ when backup gaps went undetected
+- 🏢 Your company: ??? (you probably don't even know yet)
 
 ---
 
@@ -33,81 +26,149 @@ Data pipelines are supposed to run like clockwork - hourly, daily, every 15 minu
 
 **dbt-cadence** is a dbt package that:
 
-1. **You define the rhythm** - "I expect hourly batches" or "daily batches"
-2. **We track reality** - What actually arrived in your tables
-3. **We alert on gaps** - "Batch 2025-02-08 14:00 is missing"
-4. **You prevent disasters** - Before the CEO notices
+1. 📅 **You define the rhythm** - "I expect hourly batches" or "daily batches"
+2. 🔍 **We track reality** - What actually arrived in your tables
+3. 🚨 **We alert on gaps** - "Batch 2025-02-08 14:00 is missing"
+4. ✅ **You prevent disasters** - Before the CEO notices
 
-**Philosophy:**
-> *dbt transforms what exists. dbt-cadence ensures what should exist, exists.*
+### Why dbt-cadence?
+
+| Feature | dbt-cadence | Monte Carlo | Airflow | Custom Scripts |
+|---------|-------------|-------------|---------|----------------|
+| **Cost** | Free | $50K-200K/year | Free | Dev time |
+| **Preventive** | ✅ | ❌ Reactive | ❌ Task-level | ⚠️ Depends |
+| **dbt Native** | ✅ | ❌ External | ❌ External | ❌ |
+| **Setup Time** | 5 min | Days | Hours | Weeks |
+| **Maintenance** | Low | Vendor | Medium | High |
 
 ---
 
 ## 🚀 Quick Start
 
-**Coming soon.** We're building this in public - follow along!
+### 1. Install
+```bash
+# Add to packages.yml
+packages:
+  - git: "https://github.com/Vanelfokamcode/dbt-cadence.git"
+    revision: main
 
-**Current status:** Week 1 - Foundation phase
+# Install
+dbt deps
+```
 
-**Roadmap:**
-- [ ] Week 1-2: Core metadata tracking
-- [ ] Week 3-4: Gap detection logic
-- [ ] Week 5-6: Configuration & documentation
-- [ ] Week 7-8: First beta release
+### 2. Configure
+
+Create `seeds/cadence_config.csv`:
+```csv
+model_name,frequency,start_date,enabled,table_ref,timestamp_column
+orders,hourly,2025-01-01,true,stg_orders,created_at
+subscriptions,daily,2025-01-01,true,stg_subscriptions,created_at
+```
+
+### 3. Run
+```bash
+dbt seed
+dbt run --select cadence
+```
+
+### 4. Check for Gaps
+```sql
+SELECT * FROM cadence_metadata.missing_batches
+WHERE severity IN ('HIGH', 'CRITICAL')
+```
+
+**That's it.** You're now monitoring for missing batches.
 
 ---
 
-## 📖 Why This Project Exists
+## 📊 How It Works
+```mermaid
+graph LR
+    A[Your Config] --> B[Expected Batches]
+    C[Your Tables] --> D[Actual Batches]
+    B --> E[Gap Detection]
+    D --> E
+    E --> F[Missing Batches Report]
+    F --> G[Slack Alert]
+    F --> H[Dashboard]
+```
 
-This project was born from a simple observation: **every data team has this problem, but everyone solves it differently.**
+**Step by step:**
 
-We're building `dbt-cadence` because:
-- **It should be native to dbt** - not an external observability platform
-- **It should be preventive** - catch gaps before they cascade
-- **It should be free** - core data infrastructure shouldn't cost $100K/year
-- **It should be simple** - no ML, no magic, just clear logic
-
-**Read the full story:** [WHY.md](./docs/WHY.md) | [THE_DBT_REVOLUTION.md](./docs/THE_DBT_REVOLUTION.md) | [THE_GAP.md](./docs/THE_GAP.md)
+1. **Expected Batches**: Generate timeline of when batches SHOULD arrive
+2. **Actual Batches**: Extract timestamps from your actual data
+3. **Gap Detection**: Compare expected vs actual (LEFT JOIN)
+4. **Alerting**: Flag missing batches with severity (LOW/MEDIUM/HIGH/CRITICAL)
 
 ---
 
-## 🏗️ Project Structure
+## 📖 Documentation
+
+- 📘 [Architecture](docs/ARCHITECTURE.md) - How the system is designed
+- 🧪 [Testing Strategy](docs/TESTING.md) - How we ensure quality
+- 🛠️ [Development Setup](docs/DEVELOPMENT.md) - How to contribute
+- 📚 [Full dbt Docs](http://localhost:8080) - Run `dbt docs serve`
+
+---
+
+## 🎨 Examples
+
+### Monitor Hourly Event Stream
+```csv
+events,hourly,2025-02-01,true,stg_events,event_time
 ```
-dbt-cadence/
-├── docs/                    # Project documentation
-│   ├── WHY.md              # Why this project exists
-│   ├── THE_DBT_REVOLUTION.md
-│   └── THE_GAP.md
-├── macros/                  # dbt macros (coming soon)
-├── models/                  # dbt models (coming soon)
-├── tests/                   # Test suite (coming soon)
-└── README.md               # You are here
+
+Detects if any hour is missing from your event stream.
+
+### Monitor Daily ETL
+```csv
+daily_sales,daily,2025-01-01,true,fct_sales,sale_date
 ```
+
+Alerts if a day of sales data doesn't arrive.
+
+### Custom Alerting
+```python
+# Query gaps
+gaps = db.query("""
+    SELECT * FROM cadence_metadata.missing_batches
+    WHERE severity = 'CRITICAL'
+""")
+
+# Send to Slack
+for gap in gaps:
+    slack.send(f"🚨 {gap.message} - {gap.model_name}")
+```
+
+---
+
+## 🧪 Testing
+```bash
+# Run all tests
+dbt test --select cadence
+
+# Test specific model
+dbt test --select missing_batches
+```
+
+**Test coverage:**
+- ✅ Schema tests (not_null, unique, relationships)
+- ✅ Data tests (no critical gaps, logical ages)
+- ✅ Macro tests (correct batch counts)
 
 ---
 
 ## 🤝 Contributing
 
-This is a learning-in-public project. We're building it 1 hour per day and documenting everything.
+We welcome contributions!
 
-**Want to follow along?**
-- ⭐ Star this repo
-- 👀 Watch for updates
-- 📝 Open an issue if you have this problem too
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/amazing`)
+3. Make your changes
+4. Run tests (`dbt test`)
+5. Submit a Pull Request
 
-**Want to contribute?**
-- Wait for our CONTRIBUTING.md (coming in Week 2)
-- For now, share your war stories: What batch-tracking nightmares have you experienced?
-
----
-
-## 📊 Inspiration & Prior Art
-
-Standing on the shoulders of giants:
-- [dbt-core](https://github.com/dbt-labs/dbt-core) - The foundation
-- [dbt-utils](https://github.com/dbt-labs/dbt-utils) - Package design patterns
-- [dbt-expectations](https://github.com/calogica/dbt-expectations) - Testing philosophy
-- [Great Expectations](https://github.com/great-expectations/great_expectations) - Data quality mindset
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
@@ -117,8 +178,27 @@ Apache 2.0 - See [LICENSE](LICENSE)
 
 ---
 
+## 🙏 Acknowledgments
+
+Standing on the shoulders of giants:
+- [dbt](https://www.getdbt.com/) - The foundation
+- [dbt-utils](https://github.com/dbt-labs/dbt-utils) - Package design patterns
+- [dbt-expectations](https://github.com/calogica/dbt-expectations) - Testing philosophy
+
+Inspired by the need for better data quality observability.
+
+---
+
+## 💬 Community
+
+- 🐛 [Report a Bug](https://github.com/Vanelfokamcode/dbt-cadence/issues)
+- 💡 [Request a Feature](https://github.com/Vanelfokamcode/dbt-cadence/issues)
+- 💬 [Discussions](https://github.com/Vanelfokamcode/dbt-cadence/discussions)
+
+---
+
 ## 🎵 Keep the rhythm.
 
-Built with ❤️ byy vanel
+**Because missing data shouldn't be a silent failure.**
 
-*Because missing data shouldn't be a silent failure.*
+Built with ❤️ for the data community.

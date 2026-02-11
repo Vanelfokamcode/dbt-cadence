@@ -1,0 +1,122 @@
+version: 2
+
+models:
+  - name: cadence_config
+    description: |
+      Cadence Configuration
+      
+      This is the control center for dbt-cadence. Users define which models
+      to monitor and their expected batch frequency here.
+      
+      How to use:
+      1. Add a row to seeds/example_cadence_config.csv
+      2. Run dbt seed --full-refresh
+      3. Run dbt run
+      4. Check missing_batches for gaps
+      
+      Example configuration:
+      - model_name: my_orders
+      - frequency: hourly
+      - start_date: 2025-01-01
+      - enabled: true
+      - table_ref: stg_orders
+      - timestamp_column: created_at
+      
+      This will monitor stg_orders for hourly batches starting 2025-01-01.
+      
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - model_name
+            - table_ref
+    columns:
+      - name: model_name
+        description: |
+          Logical name for the monitored model.
+          This appears in alert messages and reports.
+          Can be different from table_ref for clarity.
+        tests:
+          - not_null
+          - unique
+          
+      - name: frequency
+        description: |
+          Expected batch frequency.
+          Options: hourly (data every hour) or daily (data every day).
+          Future: weekly, custom intervals
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['hourly', 'daily']
+              
+      - name: start_date
+        description: |
+          When to start monitoring.
+          Expected batches are generated from this date forward.
+          Set this to when your data pipeline started producing data.
+        tests:
+          - not_null
+          
+      - name: enabled
+        description: |
+          Enable or disable monitoring.
+          Set to false to temporarily stop monitoring a model
+          without removing its configuration.
+          
+      - name: table_ref
+        description: |
+          dbt model reference.
+          The actual dbt model name to monitor.
+          Used in ref() to extract actual batches.
+        tests:
+          - not_null
+          
+      - name: timestamp_column
+        description: |
+          Column containing batch timestamp.
+          This column determines which batch each row belongs to.
+          Must be a timestamp or datetime column.
+          Examples: created_at, event_time, loaded_at
+        tests:
+          - not_null
+          
+      - name: config_loaded_at
+        description: Audit timestamp - when this configuration was last loaded
+
+  - name: expected_batches
+    description: |
+      Expected Batches - The timeline of truth
+      
+      This is what SHOULD exist. Generated dynamically from cadence_config 
+      using the generate_expected_batches macro. One row per expected batch.
+      
+      Example for hourly batches:
+      - model_name: orders, expected_batch_time: 2025-02-08 00:00:00
+      - model_name: orders, expected_batch_time: 2025-02-08 01:00:00
+      - model_name: orders, expected_batch_time: 2025-02-08 02:00:00
+      
+      How it works:
+      1. Read all active configs from cadence_config
+      2. For each config, call generate_expected_batches()
+      3. Union all results
+      
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - model_name
+            - expected_batch_time
+    columns:
+      - name: model_name
+        description: Model being monitored
+        tests:
+          - not_null
+          - relationships:
+              to: ref('cadence_config')
+              field: model_name
+          
+      - name: expected_batch_time
+        description: |
+          Timestamp of expected batch.
+          Truncated to appropriate granularity - hourly or daily based on frequency.
+        tests:
+          - not_null
